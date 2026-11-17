@@ -78,3 +78,32 @@ def producao_do_dia(data):
 
 def total_pedidos_do_dia(data):
     return Pedido.objects.filter(status=Pedido.Status.PENDENTE, data_hora_entrega__date=data).count()
+
+
+# RF09: o status só avança na sequência pendente -> produzido -> entregue.
+SEQUENCIA_STATUS = {
+    Pedido.Status.PENDENTE: Pedido.Status.PRODUZIDO,
+    Pedido.Status.PRODUZIDO: Pedido.Status.ENTREGUE,
+}
+
+
+def entregas_do_dia(data):
+    """RF09: pedidos da data, ordenados por horário de entrega. Cancelados não aparecem."""
+    return (
+        Pedido.objects.filter(data_hora_entrega__date=data)
+        .exclude(status=Pedido.Status.CANCELADO)
+        .select_related("cliente")
+        .order_by("data_hora_entrega")
+    )
+
+
+@transaction.atomic
+def avancar_status(pedido):
+    """RF09: avança o pedido para o próximo status da sequência."""
+    pedido = Pedido.objects.select_for_update().get(pk=pedido.pk)
+    novo = SEQUENCIA_STATUS.get(pedido.status)
+    if novo is None:
+        raise ErroPedido("Este pedido já foi entregue ou foi cancelado e não pode mudar de status.")
+    pedido.status = novo
+    pedido.save(update_fields=["status"])
+    return pedido

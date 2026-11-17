@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titulo %}Entregas · Comais{% endblock %}
+{% block conteudo %}
+<h1>Entregas do dia</h1>
+<div class="datebar">
+  <form method="get">
+    <label for="data" style="margin:0">Data:</label>
+    <input type="date" id="data" name="data" value="{{ data|date:'Y-m-d' }}">
+    <button type="submit">Ver</button>
+  </form>
+  <span>{{ pedidos|length }} entrega{{ pedidos|length|pluralize }}</span>
+</div>
+
+<div class="stack">
+  {% for p in pedidos %}
+  <article class="card ent">
+    <div class="ent-topo">
+      <strong class="ent-hora">{{ p.data_hora_entrega|time:"H:i" }}</strong>
+      {% if p.status == "pendente" %}<span class="tag low"><span aria-hidden="true">◔</span> Pendente</span>
+      {% elif p.status == "produzido" %}<span class="tag prod"><span aria-hidden="true">◑</span> Produzido</span>
+      {% else %}<span class="tag ok"><span aria-hidden="true">✔</span> Entregue</span>{% endif %}
+    </div>
+    <div class="n">{{ p.cliente.nome }}</div>
+    <div class="q">{% if p.endereco_entrega %}{{ p.endereco_entrega }}{% else %}Sem endereço informado{% endif %} · R$ {{ p.valor_total|floatformat:2 }}</div>
+    {% if user.eh_dono and p.status != "entregue" %}
+    <form method="post" action="{% url 'avancar_status' p.pk %}">
+      {% csrf_token %}
+      <button class="btn" type="submit">{% if p.status == "pendente" %}Marcar como produzido{% else %}Marcar como entregue{% endif %}</button>
+    </form>
+    {% endif %}
+  </article>
+  {% empty %}
+  <div class="card"><div class="vazio">Nenhuma entrega para esta data.</div></div>
+  {% endfor %}
+</div>
+
+<div class="stack" style="margin-top:16px">
+  <a class="btn sec" href="{% url 'menu' %}">Voltar ao menu</a>
+</div>
+{% endblock %}

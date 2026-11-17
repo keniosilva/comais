@@ -12,7 +12,7 @@
   <a class="btn menu primary" href="{% url 'novo_pedido' %}"><span class="ic" aria-hidden="true">➕</span><span>Novo pedido<small>Registrar uma encomenda</small></span></a>
   <a class="btn menu" href="{% url 'painel' %}"><span class="ic" aria-hidden="true">📋</span><span>Produção do dia</span></a>
   <a class="btn menu" href="{% url 'painel' %}#estoque"><span class="ic" aria-hidden="true">📦</span><span>Estoque</span></a>
-  <span class="btn menu disabled" aria-disabled="true"><span class="ic" aria-hidden="true">🚚</span><span>Entregas<small>em breve</small></span></span>
+  <a class="btn menu" href="{% url 'entregas' %}"><span class="ic" aria-hidden="true">🚚</span><span>Entregas</span></a>
 </nav>
 
 <form method="post" action="{% url 'logout' %}" style="margin-top:24px">
