@@ -35,6 +35,8 @@ class Pedido(models.Model):
 
     class Meta:
         ordering = ["data_hora_entrega"]
+        # Acelera a lista de produção e de entregas, que filtram por intervalo de entrega e status.
+        indexes = [models.Index(fields=["data_hora_entrega", "status"], name="pedido_entrega_status_idx")]
 
     def __str__(self):
         return f"Pedido {self.pk} - {self.cliente}"

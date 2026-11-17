@@ -58,13 +58,17 @@ def novo_pedido(request):
     return render(request, "pedidos/novo_pedido.html", {"form": form, "formset": formset})
 
 
+def _data_da_requisicao(request):
+    try:
+        return date.fromisoformat(request.GET.get("data", ""))
+    except ValueError:
+        return timezone.localdate()
+
+
 @login_required
 def painel(request):
     """Tela 3: produção do dia (RF05) e estoque com alerta de mínimo (RF08)."""
-    try:
-        data = date.fromisoformat(request.GET.get("data", ""))
-    except ValueError:
-        data = timezone.localdate()
+    data = _data_da_requisicao(request)
     contexto = {
         "data": data,
         "producao": producao_do_dia(data),
@@ -72,13 +76,6 @@ def painel(request):
         "insumos": Insumo.objects.all(),
     }
     return render(request, "pedidos/painel.html", contexto)
-
-
-def _data_da_requisicao(request):
-    try:
-        return date.fromisoformat(request.GET.get("data", ""))
-    except ValueError:
-        return timezone.localdate()
 
 
 @login_required
