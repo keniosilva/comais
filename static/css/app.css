@@ -87,3 +87,7 @@ fieldset.item legend{font-size:15px;font-weight:800;padding:0 6px}
 .ent .n{font-size:19px}
 .ent form{margin-top:10px}
 .tag.prod{background:#E8F0FA;color:#08407A;border-color:var(--primary)}
+
+/* Cadastro rápido de cliente: área de toque mínima de 44 px e foco visível (RNF04) */
+details.item summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700}
+details.item summary:focus-visible{outline:4px solid #FFB000;outline-offset:3px}

@@ -1,11 +1,12 @@
 """Regras de negócio de pedidos e produção (camada de serviços)."""
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from catalogo.models import Receita
+from catalogo.models import Insumo, Receita
 from estoque.services import baixar_insumo
 
 from .models import ItemPedido, Pedido
@@ -16,7 +17,7 @@ class ErroPedido(ValueError):
 
 
 @transaction.atomic
-def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens):
+def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens, observacao=""):
     """RF04 + RF06: grava o pedido, os itens e a baixa de insumos na MESMA transação.
 
     `itens` é uma lista de tuplas (produto, qtd_cento). Se qualquer etapa falhar,
@@ -42,6 +43,7 @@ def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens
         usuario=usuario,
         data_hora_entrega=data_hora_entrega,
         endereco_entrega=endereco_entrega or cliente.endereco,
+        observacao=observacao,
     )
 
     total = Decimal("0")
@@ -66,10 +68,30 @@ def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens
     return pedido
 
 
+def insumos_sem_saldo(pedido):
+    """Insumos usados no pedido cujo saldo ficou negativo (falta comprar antes de produzir)."""
+    return Insumo.objects.filter(movimentos__pedido=pedido, estoque_atual__lt=0).distinct().order_by("nome")
+
+
+def intervalo_do_dia(data):
+    """Início (inclusive) e fim (exclusivo) do dia no fuso do sistema.
+
+    Usado no lugar de `__date`: o lookup `__date` no MySQL depende das tabelas de fuso
+    horário do servidor e impede o uso do índice; o intervalo funciona em qualquer hospedagem.
+    """
+    inicio = timezone.make_aware(datetime.combine(data, time.min))
+    return inicio, inicio + timedelta(days=1)
+
+
 def producao_do_dia(data):
     """RF05: soma, por salgado, as encomendas pendentes com entrega na data informada."""
+    inicio, fim = intervalo_do_dia(data)
     return (
-        ItemPedido.objects.filter(pedido__status=Pedido.Status.PENDENTE, pedido__data_hora_entrega__date=data)
+        ItemPedido.objects.filter(
+            pedido__status=Pedido.Status.PENDENTE,
+            pedido__data_hora_entrega__gte=inicio,
+            pedido__data_hora_entrega__lt=fim,
+        )
         .values("produto__nome")
         .annotate(total=Sum("qtd_cento"))
         .order_by("produto__nome")
@@ -77,7 +99,10 @@ def producao_do_dia(data):
 
 
 def total_pedidos_do_dia(data):
-    return Pedido.objects.filter(status=Pedido.Status.PENDENTE, data_hora_entrega__date=data).count()
+    inicio, fim = intervalo_do_dia(data)
+    return Pedido.objects.filter(
+        status=Pedido.Status.PENDENTE, data_hora_entrega__gte=inicio, data_hora_entrega__lt=fim
+    ).count()
 
 
 # RF09: o status só avança na sequência pendente -> produzido -> entregue.
@@ -89,8 +114,9 @@ SEQUENCIA_STATUS = {
 
 def entregas_do_dia(data):
     """RF09: pedidos da data, ordenados por horário de entrega. Cancelados não aparecem."""
+    inicio, fim = intervalo_do_dia(data)
     return (
-        Pedido.objects.filter(data_hora_entrega__date=data)
+        Pedido.objects.filter(data_hora_entrega__gte=inicio, data_hora_entrega__lt=fim)
         .exclude(status=Pedido.Status.CANCELADO)
         .select_related("cliente")
         .order_by("data_hora_entrega")

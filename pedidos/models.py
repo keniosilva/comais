@@ -29,12 +29,15 @@ class Pedido(models.Model):
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="pedidos")
     data_hora_entrega = models.DateTimeField()
     endereco_entrega = models.CharField(max_length=255, blank=True)
+    observacao = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDENTE)
     valor_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["data_hora_entrega"]
+        # Acelera a lista de produção e de entregas, que filtram por intervalo de entrega e status.
+        indexes = [models.Index(fields=["data_hora_entrega", "status"], name="pedido_entrega_status_idx")]
 
     def __str__(self):
         return f"Pedido {self.pk} - {self.cliente}"
