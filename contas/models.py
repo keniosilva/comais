@@ -14,3 +14,15 @@ class Usuario(AbstractUser):
     @property
     def eh_dono(self):
         return self.perfil == self.Perfil.DONO
+
+
+class ControleLogin(models.Model):
+    """Contagem de falhas de login por nome de usuário digitado (RNF01).
+
+    Guarda só o login informado, em minúsculas, e nunca a senha. Existe tanto para
+    usuários reais quanto inexistentes, para não revelar quais logins estão cadastrados.
+    """
+
+    username = models.CharField(max_length=150, unique=True)
+    falhas = models.PositiveSmallIntegerField(default=0)
+    bloqueado_ate = models.DateTimeField(null=True, blank=True)

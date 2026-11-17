@@ -4,9 +4,9 @@
 <h1>Entrar</h1>
 <form method="post" class="stack" novalidate>
   {% csrf_token %}
-  {% if form.errors %}
-  <div class="msg error" role="alert"><span aria-hidden="true">✖</span><span>Login ou senha incorretos.</span></div>
-  {% endif %}
+  {% for erro in form.non_field_errors %}
+  <div class="msg error" role="alert"><span aria-hidden="true">✖</span><span>{{ erro }}</span></div>
+  {% endfor %}
   <div class="field">
     <label for="id_username">Login</label>
     <input type="text" name="username" id="id_username" autocomplete="username" autocapitalize="none" required autofocus>
