@@ -2,7 +2,7 @@
 
 Sistema web para gestão de **produção e estoque de insumos** de uma fábrica de salgados de festa (Comais). MVP desenvolvido como projeto de extensão do curso de Análise e Desenvolvimento de Sistemas.
 
-> **Status:** em planejamento e prototipação. Código ainda não implementado.
+> **Status:** Incrementos 1 e 2 implementados (login, cadastros, encomenda, produção do dia, baixa de insumos, compra e alerta de mínimo). Pendentes: lista de entregas (RF09), modo offline (PWA) e bloqueio por tentativas de login.
 
 ## Problema
 
@@ -44,8 +44,8 @@ Aplicação **monolítica em camadas** (apresentação, regras de negócio e dad
 | MySQL | 8.0+ | Banco de dados (InnoDB, transações) |
 | mysqlclient | a confirmar | Driver do MySQL |
 | Gunicorn | a confirmar | Servidor de aplicação em produção |
-| Bootstrap | 5.3 | Interface responsiva |
-| Service Worker | nativo | Modo offline e PWA |
+| CSS próprio (`static/css/app.css`) | - | Interface responsiva, sem dependência externa |
+| Service Worker | nativo | Modo offline e PWA (pendente) |
 
 Confirme as versões nos sites oficiais antes de fixá-las em `requirements.txt`.
 
@@ -55,7 +55,7 @@ Confirme as versões nos sites oficiais antes de fixá-las em `requirements.txt`
 - **Desempenho:** abertura da tela de novo pedido em até 3 s e salvamento em até 2 s, medidos em rede móvel simples.
 - **Acessibilidade:** área de toque mínima de 44 px, contraste AA, foco visível, rótulos persistentes e alertas por texto, símbolo e cor.
 
-## Como rodar localmente (previsto)
+## Como rodar localmente
 
 ```bash
 git clone <URL-DO-REPOSITORIO>
@@ -63,10 +63,24 @@ cd comais
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env             # preencha com valores locais
+cp .env.example .env             # preencha com valores locais (Windows: copy)
 python manage.py migrate
+python manage.py createsuperuser # acesso ao /admin/ (cadastros)
+python manage.py seed_demo --senha "uma-senha-local"   # dados FICTÍCIOS (opcional)
 python manage.py runserver
 ```
+
+- Sistema: <http://127.0.0.1:8000/> · Administração (produtos, insumos, receitas, clientes, usuários): <http://127.0.0.1:8000/admin/>
+- Sem `DB_NAME` no `.env`, o sistema usa SQLite local. Para MySQL, crie o banco e o usuário e preencha `DB_*`. O `mysqlclient` pode exigir as bibliotecas de desenvolvimento do MySQL no sistema.
+- Perfis: **dono** (registra compras) e **escritório** (consulta e cadastra pedidos). O perfil é definido no cadastro do usuário em `/admin/`.
+
+## Testes
+
+```bash
+python manage.py test
+```
+
+Cobrem: baixa de insumos pela receita, transação atômica (falha não grava nada), regras do pedido, soma da produção, compra, alerta de mínimo, acesso por perfil, escape de HTML, hash de senha e encerramento de sessão.
 
 ## Plano de entregas
 
@@ -78,12 +92,17 @@ python manage.py runserver
 
 ```
 comais/
-├── README.md
-├── requirements.txt
-├── .env.example
-├── .gitignore
+├── config/          # configurações, URLs
+├── contas/          # usuário com perfil (dono/escritório), permissões
+├── catalogo/        # produtos, insumos, receitas (+ comando seed_demo)
+├── pedidos/         # clientes, pedidos, itens; services.py (regras), forms, views, testes
+├── estoque/         # movimentos; services.py (compra, baixa, alerta de mínimo)
+├── templates/       # telas (login, menu, novo pedido, painel)
+├── static/css/      # estilos
 └── docs/            # requisitos, modelo de dados, protótipos e guia de implantação
 ```
+
+As regras de negócio ficam em `services.py`; as views só validam a entrada e chamam os serviços; o acesso ao banco passa pelo ORM do Django.
 
 ## Dados e privacidade
 
@@ -95,4 +114,4 @@ ODS 8 (Trabalho Decente e Crescimento Econômico), meta 8.3: apoio à gestão de
 
 ## Autor
 
-Kenio do Nascimento Silva
+Kenio do Nascimento Silva · Elétrica.com Projetos

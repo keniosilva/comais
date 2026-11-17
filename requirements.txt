@@ -1,0 +1,5 @@
+# Fixe as versões exatas depois de confirmar nos sites oficiais.
+Django>=5.2,<5.3
+python-dotenv
+mysqlclient
+gunicorn

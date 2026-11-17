@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Produção e estoque · Comais{% endblock %}
+{% block conteudo %}
+<h2>Produção do dia</h2>
+<div class="datebar">
+  <form method="get">
+    <label for="data" style="margin:0">Entrega:</label>
+    <input type="date" id="data" name="data" value="{{ data|date:'Y-m-d' }}">
+    <button type="submit">Ver</button>
+  </form>
+  <span>{{ total_pedidos }} pedido{{ total_pedidos|pluralize }}</span>
+</div>
+<div class="card">
+  {% for linha in producao %}
+  <div class="prod"><span>{{ linha.produto__nome }}</span><b>{{ linha.total|floatformat:"-2" }} cento</b></div>
+  {% empty %}
+  <div class="vazio">Nenhum pedido pendente para esta data.</div>
+  {% endfor %}
+</div>
+
+<h2 id="estoque">Estoque de insumos</h2>
+<div class="card">
+  {% for insumo in insumos %}
+  <div class="ins {% if insumo.abaixo_do_minimo %}low{% endif %}">
+    <div class="n">{{ insumo.nome }}</div>
+    <div class="q">{{ insumo.estoque_atual|floatformat:"-3" }} {{ insumo.unidade }} · mínimo {{ insumo.estoque_minimo|floatformat:"-3" }} {{ insumo.unidade }}</div>
+    {% if insumo.abaixo_do_minimo %}
+    <span class="tag low"><span aria-hidden="true">⚠</span> Baixo</span>
+    {% else %}
+    <span class="tag ok"><span aria-hidden="true">✔</span> Ok</span>
+    {% endif %}
+    {% if user.eh_dono %}
+    <form class="compra" method="post" action="{% url 'compra' insumo.pk %}">
+      {% csrf_token %}
+      <div style="flex:1">
+        <label for="q{{ insumo.pk }}">Quantidade comprada ({{ insumo.unidade }})</label>
+        <input id="q{{ insumo.pk }}" name="quantidade" type="number" step="0.001" min="0.001" inputmode="decimal" required>
+      </div>
+      <button type="submit">Registrar compra</button>
+    </form>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="vazio">Nenhum insumo cadastrado. Cadastre em Administração.</div>
+  {% endfor %}
+</div>
+
+<div class="stack" style="margin-top:16px">
+  <a class="btn" href="{% url 'novo_pedido' %}">Novo pedido</a>
+  <a class="btn sec" href="{% url 'menu' %}">Voltar ao menu</a>
+</div>
+{% endblock %}

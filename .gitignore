@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Django
+db.sqlite3
+/staticfiles/
+/media/
+*.log
+
+# Segredos e ambiente
+.env
+*.env
+!.env.example
+
+# Dumps de banco
+*.sql
+*.dump
+
+# Editor e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

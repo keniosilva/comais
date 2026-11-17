@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+{% if em_falta %}
+<div class="msg warning" role="status">
+  <span aria-hidden="true">⚠</span>
+  <span><strong>Atenção:</strong> {{ em_falta }} insumo{{ em_falta|pluralize }} em falta.<br>Veja em Estoque.</span>
+</div>
+{% endif %}
+
+<h1>O que você quer fazer?</h1>
+<nav class="stack" aria-label="Menu principal">
+  <a class="btn menu primary" href="{% url 'novo_pedido' %}"><span class="ic" aria-hidden="true">➕</span><span>Novo pedido<small>Registrar uma encomenda</small></span></a>
+  <a class="btn menu" href="{% url 'painel' %}"><span class="ic" aria-hidden="true">📋</span><span>Produção do dia</span></a>
+  <a class="btn menu" href="{% url 'painel' %}#estoque"><span class="ic" aria-hidden="true">📦</span><span>Estoque</span></a>
+  <span class="btn menu disabled" aria-disabled="true"><span class="ic" aria-hidden="true">🚚</span><span>Entregas<small>em breve</small></span></span>
+</nav>
+
+<form method="post" action="{% url 'logout' %}" style="margin-top:24px">
+  {% csrf_token %}
+  <button class="btn sec" type="submit">Sair</button>
+</form>
+{% endblock %}

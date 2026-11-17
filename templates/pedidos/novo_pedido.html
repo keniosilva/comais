@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block titulo %}Novo pedido · Comais{% endblock %}
+{% block conteudo %}
+<h1>Novo pedido</h1>
+<p class="hint">Preencha os campos. O valor é conferido ao salvar.</p>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="msg error" role="alert"><span aria-hidden="true">✖</span>
+    <span>{% for e in form.non_field_errors %}{{ e }} {% endfor %}</span></div>
+  {% endif %}
+
+  <div class="field {% if form.cliente.errors %}invalid{% endif %}">
+    <label for="{{ form.cliente.id_for_label }}">{{ form.cliente.label }}</label>
+    {{ form.cliente }}
+    {% for e in form.cliente.errors %}<div class="errmsg" role="alert"><span aria-hidden="true">✖</span><span>{{ e }}</span></div>{% endfor %}
+  </div>
+
+  {{ formset.management_form }}
+  {% for item in formset %}
+  <fieldset class="item">
+    <legend>Item {{ forloop.counter }}</legend>
+    <div class="field {% if item.produto.errors %}invalid{% endif %}">
+      <label for="{{ item.produto.id_for_label }}">{{ item.produto.label }}</label>
+      {{ item.produto }}
+      {% for e in item.produto.errors %}<div class="errmsg" role="alert"><span aria-hidden="true">✖</span><span>{{ e }}</span></div>{% endfor %}
+    </div>
+    <div class="field {% if item.qtd_cento.errors %}invalid{% endif %}">
+      <label for="{{ item.qtd_cento.id_for_label }}">{{ item.qtd_cento.label }}</label>
+      {{ item.qtd_cento }}
+      {% for e in item.qtd_cento.errors %}<div class="errmsg" role="alert"><span aria-hidden="true">✖</span><span>{{ e }}</span></div>{% endfor %}
+    </div>
+  </fieldset>
+  {% endfor %}
+
+  <div class="row">
+    <div class="field {% if form.data_entrega.errors %}invalid{% endif %}">
+      <label for="{{ form.data_entrega.id_for_label }}">{{ form.data_entrega.label }}</label>
+      {{ form.data_entrega }}
+      {% for e in form.data_entrega.errors %}<div class="errmsg" role="alert"><span aria-hidden="true">✖</span><span>{{ e }}</span></div>{% endfor %}
+    </div>
+    <div class="field {% if form.hora_entrega.errors %}invalid{% endif %}">
+      <label for="{{ form.hora_entrega.id_for_label }}">{{ form.hora_entrega.label }}</label>
+      {{ form.hora_entrega }}
+      {% for e in form.hora_entrega.errors %}<div class="errmsg" role="alert"><span aria-hidden="true">✖</span><span>{{ e }}</span></div>{% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="{{ form.endereco_entrega.id_for_label }}">{{ form.endereco_entrega.label }}</label>
+    {{ form.endereco_entrega }}
+  </div>
+
+  <div class="stack">
+    <button class="btn" type="submit">Salvar pedido</button>
+    <a class="btn sec" href="{% url 'menu' %}">Voltar ao menu</a>
+  </div>
+</form>
+{% endblock %}
