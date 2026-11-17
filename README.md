@@ -2,7 +2,7 @@
 
 Sistema web para gestão de **produção e estoque de insumos** de uma fábrica de salgados de festa (Comais). MVP desenvolvido como projeto de extensão do curso de Análise e Desenvolvimento de Sistemas.
 
-> **Status:** Incrementos 1 e 2 implementados (login, cadastros, encomenda, produção do dia, baixa de insumos, compra e alerta de mínimo). Pendentes: lista de entregas (RF09), modo offline (PWA) e bloqueio por tentativas de login.
+> **Status:** Incrementos 1, 2 e 3 implementados (login com bloqueio por tentativas, cadastros, encomenda, produção do dia, baixa de insumos, compra, alerta de mínimo e lista de entregas com status). Pendente: modo offline (PWA).
 
 ## Problema
 
@@ -80,7 +80,7 @@ python manage.py runserver
 python manage.py test
 ```
 
-Cobrem: baixa de insumos pela receita, transação atômica (falha não grava nada), regras do pedido, soma da produção, compra, alerta de mínimo, acesso por perfil, escape de HTML, hash de senha e encerramento de sessão.
+Cobrem: baixa de insumos pela receita, transação atômica (falha não grava nada), regras do pedido, soma da produção, compra, alerta de mínimo, sequência de status das entregas, bloqueio após 5 logins inválidos, acesso por perfil, escape de HTML, hash de senha e encerramento de sessão.
 
 ## Plano de entregas
 
