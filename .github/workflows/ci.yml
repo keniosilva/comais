@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  testes:
+    name: Testes e cobertura
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_SECRET_KEY: chave-apenas-para-ci-nao-e-segredo
+      DJANGO_DEBUG: "True"
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v4
+      - name: Instalar o Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: pip install "Django>=5.2,<5.3" python-dotenv coverage
+      - name: Verificar configuracao
+        run: python manage.py check
+      - name: Verificar migrations
+        run: python manage.py makemigrations --check --dry-run
+      - name: Rodar testes
+        run: coverage run manage.py test
+      - name: Relatorio de cobertura
+        run: coverage report --fail-under=80
