@@ -6,7 +6,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
-from catalogo.models import Receita
+from catalogo.models import Insumo, Receita
 from estoque.services import baixar_insumo
 
 from .models import ItemPedido, Pedido
@@ -17,7 +17,7 @@ class ErroPedido(ValueError):
 
 
 @transaction.atomic
-def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens):
+def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens, observacao=""):
     """RF04 + RF06: grava o pedido, os itens e a baixa de insumos na MESMA transação.
 
     `itens` é uma lista de tuplas (produto, qtd_cento). Se qualquer etapa falhar,
@@ -43,6 +43,7 @@ def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens
         usuario=usuario,
         data_hora_entrega=data_hora_entrega,
         endereco_entrega=endereco_entrega or cliente.endereco,
+        observacao=observacao,
     )
 
     total = Decimal("0")
@@ -65,6 +66,11 @@ def criar_pedido(*, usuario, cliente, data_hora_entrega, endereco_entrega, itens
     pedido.valor_total = total
     pedido.save(update_fields=["valor_total"])
     return pedido
+
+
+def insumos_sem_saldo(pedido):
+    """Insumos usados no pedido cujo saldo ficou negativo (falta comprar antes de produzir)."""
+    return Insumo.objects.filter(movimentos__pedido=pedido, estoque_atual__lt=0).distinct().order_by("nome")
 
 
 def intervalo_do_dia(data):

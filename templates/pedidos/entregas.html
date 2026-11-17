@@ -22,6 +22,7 @@
     </div>
     <div class="n">{{ p.cliente.nome }}</div>
     <div class="q">{% if p.endereco_entrega %}{{ p.endereco_entrega }}{% else %}Sem endereço informado{% endif %} · R$ {{ p.valor_total|floatformat:2 }}</div>
+    {% if p.observacao %}<div class="q"><strong>Obs.:</strong> {{ p.observacao }}</div>{% endif %}
     {% if user.eh_dono and p.status != "entregue" %}
     <form method="post" action="{% url 'avancar_status' p.pk %}">
       {% csrf_token %}

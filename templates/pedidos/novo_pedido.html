@@ -2,7 +2,7 @@
 {% block titulo %}Novo pedido · Comais{% endblock %}
 {% block conteudo %}
 <h1>Novo pedido</h1>
-<p class="hint">Preencha os campos. O valor é conferido ao salvar.</p>
+<p class="hint">Preencha os campos. O total aparece abaixo e é conferido ao salvar.</p>
 
 <form method="post" novalidate>
   {% csrf_token %}
@@ -17,6 +17,19 @@
     {{ form.cliente }}
     {% for e in form.cliente.errors %}<div class="errmsg" role="alert"><span aria-hidden="true">✖</span><span>{{ e }}</span></div>{% endfor %}
   </div>
+
+  <details class="item" {% if form.novo_cliente_nome.value or form.novo_cliente_telefone.errors %}open{% endif %}>
+    <summary>Cliente novo? Cadastre aqui</summary>
+    <div class="field">
+      <label for="{{ form.novo_cliente_nome.id_for_label }}">{{ form.novo_cliente_nome.label }}</label>
+      {{ form.novo_cliente_nome }}
+    </div>
+    <div class="field {% if form.novo_cliente_telefone.errors %}invalid{% endif %}">
+      <label for="{{ form.novo_cliente_telefone.id_for_label }}">{{ form.novo_cliente_telefone.label }}</label>
+      {{ form.novo_cliente_telefone }}
+      {% for e in form.novo_cliente_telefone.errors %}<div class="errmsg" role="alert"><span aria-hidden="true">✖</span><span>{{ e }}</span></div>{% endfor %}
+    </div>
+  </details>
 
   {{ formset.management_form }}
   {% for item in formset %}
@@ -53,9 +66,37 @@
     {{ form.endereco_entrega }}
   </div>
 
+  <div class="field">
+    <label for="{{ form.observacao.id_for_label }}">{{ form.observacao.label }}</label>
+    {{ form.observacao }}
+  </div>
+
+  <p class="card" id="total" role="status" aria-live="polite" style="padding:12px 14px;font-weight:700">Total: R$ 0,00</p>
+
   <div class="stack">
     <button class="btn" type="submit">Salvar pedido</button>
     <a class="btn sec" href="{% url 'menu' %}">Voltar ao menu</a>
   </div>
 </form>
+{{ precos|json_script:"precos" }}
+<script>
+(function () {
+  // Total ao vivo (melhoria sem efeito se o JavaScript estiver desligado; o servidor confere ao salvar).
+  var precos = JSON.parse(document.getElementById("precos").textContent);
+  var saida = document.getElementById("total");
+  function atualizar() {
+    var total = 0;
+    document.querySelectorAll("fieldset.item").forEach(function (f) {
+      var prod = f.querySelector("select");
+      var qtd = parseFloat((f.querySelector("input[type=number]").value || "").replace(",", "."));
+      if (prod && precos[prod.value] && qtd > 0) { total += qtd * parseFloat(precos[prod.value]); }
+    });
+    saida.textContent = "Total: R$ " + total.toFixed(2).replace(".", ",");
+  }
+  document.querySelectorAll("fieldset.item select, fieldset.item input").forEach(function (el) {
+    el.addEventListener("input", atualizar); el.addEventListener("change", atualizar);
+  });
+  atualizar();
+})();
+</script>
 {% endblock %}

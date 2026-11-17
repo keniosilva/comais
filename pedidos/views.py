@@ -1,23 +1,25 @@
 from datetime import date, datetime
 
 from django.contrib import messages
+from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from catalogo.models import Insumo
+from catalogo.models import Insumo, Produto
 from contas.permissions import dono_required
 from estoque.services import insumos_abaixo_do_minimo
 
 from .forms import ItemFormSet, PedidoForm
-from .models import Pedido
+from .models import Cliente, Pedido
 from .services import (
     ErroPedido,
     avancar_status,
     criar_pedido,
     entregas_do_dia,
+    insumos_sem_saldo,
     producao_do_dia,
     total_pedidos_do_dia,
 )
@@ -40,22 +42,37 @@ def novo_pedido(request):
             dados = form.cleaned_data
             entrega = timezone.make_aware(datetime.combine(dados["data_entrega"], dados["hora_entrega"]))
             try:
-                criar_pedido(
-                    usuario=request.user,
-                    cliente=dados["cliente"],
-                    data_hora_entrega=entrega,
-                    endereco_entrega=dados["endereco_entrega"],
-                    itens=itens,
-                )
+                # Cliente novo e pedido na mesma transação: se o pedido falhar, o cliente não fica gravado.
+                with transaction.atomic():
+                    cliente = dados["cliente"] or Cliente.objects.create(
+                        nome=dados["novo_cliente_nome"],
+                        telefone=dados["novo_cliente_telefone"],
+                        endereco=dados["endereco_entrega"],
+                    )
+                    pedido = criar_pedido(
+                        usuario=request.user,
+                        cliente=cliente,
+                        data_hora_entrega=entrega,
+                        endereco_entrega=dados["endereco_entrega"],
+                        itens=itens,
+                        observacao=dados["observacao"],
+                    )
             except ErroPedido as erro:
                 form.add_error(None, str(erro))
             else:
                 messages.success(request, "Pedido salvo. Produção e estoque atualizados.")
+                faltas = [i.nome for i in insumos_sem_saldo(pedido)]
+                if faltas:
+                    messages.warning(
+                        request,
+                        "Estoque insuficiente para este pedido: " + ", ".join(faltas) + ". Registre a compra antes de produzir.",
+                    )
                 return redirect(f"{reverse('painel')}?data={dados['data_entrega'].isoformat()}")
     else:
         form = PedidoForm()
         formset = ItemFormSet(prefix="itens")
-    return render(request, "pedidos/novo_pedido.html", {"form": form, "formset": formset})
+    precos = {str(p.pk): str(p.preco_cento) for p in Produto.objects.filter(ativo=True)}
+    return render(request, "pedidos/novo_pedido.html", {"form": form, "formset": formset, "precos": precos})
 
 
 def _data_da_requisicao(request):
