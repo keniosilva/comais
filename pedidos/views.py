@@ -1,7 +1,8 @@
 from datetime import date, datetime
 
 from django.contrib import messages
-from django.db import transaction
+from django.db import connection, transaction
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -23,6 +24,16 @@ from .services import (
     producao_do_dia,
     total_pedidos_do_dia,
 )
+
+
+def saude(request):
+    """Verificação de saúde para o monitoramento: responde 200 se a aplicação e o banco estão de pé, 503 se não."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception:  # qualquer falha de banco deve virar 503, sem expor detalhes
+        return JsonResponse({"status": "erro", "banco": "indisponivel"}, status=503)
+    return JsonResponse({"status": "ok", "banco": "ok"})
 
 
 @login_required
